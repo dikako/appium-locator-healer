@@ -1,0 +1,83 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+group = 'sleeper'
+version = '1.0-SNAPSHOT'
+
+java {
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
+    }
+    withSourcesJar()
+    withJavadocJar()
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    implementation 'io.appium:java-client:10.0.0'
+    implementation 'com.google.genai:google-genai:1.17.0'
+    implementation 'com.google.code.gson:gson:2.13.2'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            groupId = project.group
+            artifactId = 'appium-locator-healer'
+            version = project.version
+
+            pom {
+                name = 'GDrive Downloader'
+                description = 'A CLI tool and Java Library for downloading files from Google Drive using a service account'
+                url = 'https://github.com/dikako/appium-locator-healer'
+                licenses {
+                    license {
+                        name = 'The MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'dikako'
+                        name = 'Fransiskus Andika Setiawan'
+                        email = 'dikakoko@icloud.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/dikako/appium-locator-healer.git'
+                    developerConnection = 'scm:git:ssh://github.com:dikako/appium-locator-healer.git'
+                    url = 'https://github.com/dikako/appium-locator-healer'
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GithubPackages"
+            url = uri("https://maven.pkg.github.com/dikako/appium-locator-healer")
+
+            credentials {
+                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+                password = project.findProperty("gpr.key") ?: System.getenv("PUBLISH_TOKEN")
+            }
+        }
+    }
+}
