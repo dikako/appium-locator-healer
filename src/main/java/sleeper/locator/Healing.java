@@ -15,6 +15,7 @@ import sleeper.utils.LocatorUtils;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
@@ -24,8 +25,20 @@ import java.util.logging.Logger;
  * error details and context.
  */
 public class Healing {
-  private static final Logger logger = Logger.getLogger(IOSHealing.class.getName());
+  private static final Logger logger = Logger.getLogger(Healing.class.getName());
   private static final LocatorHealingResultsLogger resultsLogger = new LocatorHealingResultsLogger();
+
+  /**
+   * A thread-safe cache that stores resolved locators for UI elements. The key is a string
+   * representing the unique identifier of the element or the context, and the value is a
+   * {@link By} object representing the corresponding locator.
+   * <p>
+   * This cache is utilized to improve performance by avoiding repeated computation or retrieval
+   * of locators, particularly in scenarios where dynamic locator healing is performed. It is
+   * maintained across different healing operations to facilitate reuse of previously resolved
+   * locators.
+   */
+  private static final Map<String, By> locatorCache = new ConcurrentHashMap<>();
 
   /**
    * Represents the supported platforms for element healing operations.
@@ -55,35 +68,50 @@ public class Healing {
 
 
   /**
-   * Attempts to heal a failing element locator by utilizing an AI-driven model to generate a new
-   * valid locator based on the provided error details and platform-specific context. The method
-   * returns a resolved {@link By} object representing the new locator.
+   * Attempts to resolve and heal a failing element locator using AI-driven predictions
+   * based on the provided context, error details, and platform.
    *
-   * @param platform            the platform for which the healing is being performed (ANDROID, IOS, or WEB)
-   * @param geminiModel         the name or identifier of the AI model used for generating the new locator
-   * @param iosDriver           the WebDriver instance used to interact with iOS applications
-   * @param errorElementLocator the locator of the element that failed and needs to be healed
-   * @param errorDetails        details of the error that occurred (e.g., error message or context)
-   * @param uiLabel             an optional UI label or element description used for additional context
-   * @param timeout             the maximum amount of time (in seconds) to wait for the AI model's response
-   * @return a {@link By} object representing the new valid locator for the element
+   * @param platform            the platform (ANDROID, IOS, or WEB) used for healing the element
+   * @param geminiModel         the identifier of the Gemini AI model to use for healing
+   * @param driver              the WebDriver instance providing access to the current page context
+   * @param errorElementLocator the failing element locator that needs to be healed
+   * @param errorDetails        additional error details (e.g., error messages, stack traces) relevant to the failure
+   * @param uiLabel             an optional label describing the expected UI element for additional context
+   * @param timeout             the timeout duration, in milliseconds, for the AI model response
+   * @return the resolved and healed location of the failing element as a {@code By} object
    */
   public static By healLocator(
     Platform platform,
     String geminiModel,
-    WebDriver iosDriver,
+    WebDriver driver,
     String errorElementLocator,
     String errorDetails,
     String uiLabel,
     int timeout) {
-    logger.info("[" + platform.toString() + " Element Healing] Starting iOS element healing with model: " + geminiModel);
 
-    GenerateContentResponse response =
-      GeminiUtils.getResponse(
-        geminiModel,
-        getPrompt(platform, iosDriver, errorElementLocator, errorDetails, uiLabel),
-        timeout
-      );
+    String cacheKey = String.join("|",
+      platform.toString(),
+      geminiModel,
+      errorElementLocator,
+      errorDetails,
+      uiLabel
+    );
+
+    if (locatorCache.containsKey(cacheKey)) {
+      logger.info(String.format(
+        "[%s Element Healing] Cache HIT. Returning previously resolved locator for: %s",
+        platform, errorElementLocator
+      ));
+      return locatorCache.get(cacheKey);
+    }
+
+    logger.info(String.format("[%s Element Healing] Starting iOS element healing with model: %s", platform, geminiModel));
+
+    GenerateContentResponse response = GeminiUtils.getResponse(
+      geminiModel,
+      getPrompt(platform, driver, errorElementLocator, errorDetails, uiLabel),
+      timeout
+    );
 
     String responseText = response.text();
 
@@ -121,6 +149,9 @@ public class Healing {
         "detailAIResponse", responseTextToJsonElement.toString()
       )
     );
+
+    locatorCache.put(cacheKey, resolvedLocator);
+    logger.info(String.format("[%s Element Healing] New locator has been cached.", platform));
 
     return resolvedLocator;
   }
