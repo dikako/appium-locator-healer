@@ -1,6 +1,21 @@
 package sleeper.prompt;
 
+/**
+ * The IOSPrompts class provides utility functions to generate AI-guided prompts
+ * for diagnosing and resolving iOS application locator failures. It is specifically
+ * tailored for scenarios involving Appium or XCUITest frameworks, where robust locator
+ * replacement strategies are required to enhance test automation reliability.
+ */
 public class IOSPrompts {
+  /**
+   * Builds a prompt to guide an AI model in diagnosing and resolving locator issues specifically for iOS applications.
+   *
+   * @param pageSource    the full iOS UI XML page source (hierarchy dump), provided to analyze the app's view structure
+   * @param currentLocator the locator string of the element that failed (e.g., an invalid `id` or XPath)
+   * @param error         the error message from the driver describing the failure
+   * @param uiLabel       optional expected text/element labels the user perceives or interacts with (e.g., visible name/title/value)
+   * @return a String that includes a structured AI prompt with all necessary context for proposing a robust replacement locator
+   */
   public static String prompt(String pageSource, String currentLocator, String error, String uiLabel) {
     return """
       ROLE

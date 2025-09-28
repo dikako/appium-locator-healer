@@ -1,62 +1,44 @@
 package sleeper.locator;
 
-import com.google.genai.Client;
-import com.google.genai.types.GenerateContentResponse;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import io.appium.java_client.ios.IOSDriver;
-import sleeper.prompt.IOSPrompts;
+import org.openqa.selenium.By;
 
-import java.util.logging.Logger;
-
+/**
+ * Provides functionality to heal invalid locators in an iOS application by using a Gemini AI model.
+ * The class relies on the Healing framework to find and return a valid locator for an element
+ * whose locator is either obsolete or cannot be identified.
+ */
 public class IOSHealing {
 
-  private static final Logger logger = Logger.getLogger(IOSHealing.class.getName());
+  /**
+   * Attempts to heal the locator for a UI element by leveraging the provided Gemini AI model.
+   * This method uses the Healing framework to identify and return a valid locator
+   * for an element that might have changed or become invalid.
+   *
+   * @param geminiModel the Gemini AI model used to heal the locator
+   * @param iosDriver the iOSDriver instance used to interact with the mobile application
+   * @param errorElementLocator the current, invalid locator of the element that needs healing
+   * @param error the error details associated with the invalid element
+   * @param uiLabel the UI label or descriptive text associated with the element, used to aid healing
+   * @param timeout optional timeout (in milliseconds) to wait for the AI model to generate a response; defaults to 15000
+   * @return a valid locator for the element that has been healed
+   */
+  public static By healLocator(
+    String geminiModel,
+    IOSDriver iosDriver,
+    String errorElementLocator,
+    String error,
+    String uiLabel,
+    int... timeout) {
 
-  public static JsonObject healLocator(String geminiModel, IOSDriver driver, String currentLocator, String error, String uiLabel) {
-    Client geminiClient = new Client();
-
-    String prompt = IOSPrompts.prompt(
-      driver.getPageSource(),
-      currentLocator,
+    return Healing.healLocator(
+      Healing.Platform.IOS,
+      geminiModel,
+      iosDriver,
+      errorElementLocator,
       error,
-      uiLabel
+      uiLabel,
+      timeout.length == 0 ? 15000 : timeout[0]
     );
-
-    GenerateContentResponse response =
-      geminiClient.models.generateContent(
-        geminiModel,
-        prompt,
-        null
-      );
-
-    String responseText = response.text();
-
-    try {
-      assert responseText != null;
-    } catch (AssertionError e) {
-      logger.warning("Response text is null, " + e.getMessage());
-      responseText = "";
-    }
-
-    responseText = responseText
-      .replace("```json", "")
-      .replace("```", "")
-      .trim();
-
-    logger.info("Response text: " + responseText);
-
-    JsonElement responseTextToJsonElement = JsonParser.parseString(responseText);
-    JsonObject responseJson = responseTextToJsonElement.getAsJsonObject();
-    String locatorType = responseJson.get("newValidElementType").getAsString();
-    String locator = responseJson.get("newValidElement").getAsString();
-
-    logger.info("""
-      Element Type: %s
-      Element Locator: %s
-      """.formatted(locatorType, locator));
-
-    return responseJson;
   }
 }
