@@ -33,8 +33,23 @@ public class Healing {
    * (e.g., Android, iOS, or Web) when invoking healing methods.
    */
   public enum Platform {
+    /**
+     * Represents the Android platform in the context of element healing operations.
+     * This constant is used to specify that the target platform for healing
+     * invalid locators or elements is Android.
+     */
     ANDROID,
+    /**
+     * Represents the iOS platform in the context of element healing operations.
+     * This constant is used to specify that the target platform for healing
+     * invalid locators or elements is iOS.
+     */
     IOS,
+    /**
+     * Represents the Web platform in the context of element healing operations.
+     * This constant is used to specify that the target platform for healing
+     * invalid locators or elements is Web.
+     */
     WEB
   }
 
