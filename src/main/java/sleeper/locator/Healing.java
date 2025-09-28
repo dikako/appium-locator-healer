@@ -59,13 +59,13 @@ public class Healing {
    * valid locator based on the provided error details and platform-specific context. The method
    * returns a resolved {@link By} object representing the new locator.
    *
-   * @param platform             the platform for which the healing is being performed (ANDROID, IOS, or WEB)
-   * @param geminiModel          the name or identifier of the AI model used for generating the new locator
-   * @param iosDriver            the WebDriver instance used to interact with iOS applications
-   * @param errorElementLocator  the locator of the element that failed and needs to be healed
-   * @param errorDetails         details of the error that occurred (e.g., error message or context)
-   * @param uiLabel              an optional UI label or element description used for additional context
-   * @param timeout              the maximum amount of time (in seconds) to wait for the AI model's response
+   * @param platform            the platform for which the healing is being performed (ANDROID, IOS, or WEB)
+   * @param geminiModel         the name or identifier of the AI model used for generating the new locator
+   * @param iosDriver           the WebDriver instance used to interact with iOS applications
+   * @param errorElementLocator the locator of the element that failed and needs to be healed
+   * @param errorDetails        details of the error that occurred (e.g., error message or context)
+   * @param uiLabel             an optional UI label or element description used for additional context
+   * @param timeout             the maximum amount of time (in seconds) to wait for the AI model's response
    * @return a {@link By} object representing the new valid locator for the element
    */
   public static By healLocator(
@@ -103,17 +103,8 @@ public class Healing {
     JsonObject responseJson = responseTextToJsonElement.getAsJsonObject();
     String locatorType = responseJson.get("newValidElementType").getAsString();
     String locator = responseJson.get("newValidElement").getAsString();
-
     // Resolved element locator
     By resolvedLocator = LocatorUtils.getByFromString(locatorType, locator);
-    resultsLogger.saveHealedElementLocator(
-      Map.of(
-        "executedAt", Instant.now(),
-        "errorElementLocator", errorElementLocator,
-        "resolvedElementLocator", resolvedLocator,
-        "detailAIResponse", responseTextToJsonElement
-      )
-    );
 
     logger.info("""
       [iOS Element Healing]
@@ -121,6 +112,15 @@ public class Healing {
       Prompt Response           -> %s
       Resolved Element Locator  -> %s
       """.formatted(errorElementLocator, responseText, resolvedLocator.toString()));
+
+    resultsLogger.saveHealedElementLocator(
+      Map.of(
+        "executedAt", Instant.now().toString(),
+        "errorElementLocator", errorElementLocator,
+        "resolvedElementLocator", resolvedLocator.toString(),
+        "detailAIResponse", responseTextToJsonElement.toString()
+      )
+    );
 
     return resolvedLocator;
   }
@@ -130,11 +130,11 @@ public class Healing {
    * The prompt is designed to assist with AI-driven healing of failing element locators
    * by providing a structured set of inputs relevant to the specific platform.
    *
-   * @param platform             the platform (ANDROID, IOS, or WEB) determining the prompt logic
-   * @param driver               the WebDriver instance used to extract page source
-   * @param errorElementLocator  the failing locator causing the error
-   * @param errorDetails         additional details about the error (e.g., error message from the WebDriver)
-   * @param uiLabel              an optional value representing the expected UI element or label
+   * @param platform            the platform (ANDROID, IOS, or WEB) determining the prompt logic
+   * @param driver              the WebDriver instance used to extract page source
+   * @param errorElementLocator the failing locator causing the error
+   * @param errorDetails        additional details about the error (e.g., error message from the WebDriver)
+   * @param uiLabel             an optional value representing the expected UI element or label
    * @return a structured prompt string specific to the given platform, containing all relevant information
    */
   private static String getPrompt(
