@@ -26,7 +26,6 @@ import java.util.Objects;
  * - Custom file paths can be specified during instantiation.
  * - Thread-safe appending of locator results.
  * - Automatic creation of missing directories and file handling.
- * - Corrupted files are backed up with a ".broken.<timestamp>" suffix.
  * <p>
  * Designed for use in automated UI testing frameworks that rely on locator healing,
  * aiding in scenarios such as logging AI-generated or dynamically resolved locators.
