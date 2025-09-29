@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -351,17 +352,17 @@ public class Healing {
     By elementLocator,
     String uiLabel,
     int timeoutGeminiResponse,
-    Supplier<T> action
+    Function<By, T> action
   ) {
     try {
       // First attempt
-      return action.get();
+      return action.apply(elementLocator);
     } catch (Exception e) {
       String errorMessage = e.getMessage();
       logger.warning(String.format("Action failed on element: %s, Error: %s", elementLocator, errorMessage));
 
       // Heal locator
-      healLocator(
+      By healedLocator = healLocator(
         platform,
         geminiModel,
         driver,
@@ -371,15 +372,17 @@ public class Healing {
         timeoutGeminiResponse
       );
 
+      String healedLocatorString = healedLocator.toString();
+
       try {
         // Retry after healing
-        T result = action.get();
-        logger.info(String.format("Action succeeded after healing: %s", elementLocator));
+        T result = action.apply(healedLocator);
+        logger.info(String.format("Action succeeded after healing: %s", healedLocatorString));
         return result;
       } catch (Exception retryEx) {
         logger.warning(String.format("Action still failed after healing: %s, Error: %s",
-          elementLocator, retryEx.getMessage()));
-        throw new RuntimeException(retryEx);
+          healedLocatorString, retryEx.getMessage()));
+        throw retryEx;
       }
     }
   }
@@ -413,7 +416,7 @@ public class Healing {
       elementLocator,
       uiLabel,
       timeoutGeminiResponse,
-      () -> waitUntilClickable(driver, elementLocator, timeout)
+      (By locator) -> waitUntilClickable(driver, locator, timeout)
     );
   }
 
@@ -433,7 +436,7 @@ public class Healing {
       elementLocator,
       uiLabel,
       timeoutGeminiResponse,
-      () -> waitUntilVisible(driver, elementLocator, timeout)
+      (By locator) -> waitUntilVisible(driver, locator, timeout)
     );
   }
 
@@ -466,7 +469,7 @@ public class Healing {
       elementLocator,
       uiLabel,
       timeoutGeminiResponse,
-      () -> waitUntilPresent(driver, elementLocator, timeout)
+      (By locator) -> waitUntilPresent(driver, locator, timeout)
     );
   }
 
@@ -486,7 +489,7 @@ public class Healing {
       elementLocator,
       uiLabel,
       timeoutGeminiResponse,
-      () -> waitAllUntilPresent(driver, elementLocator, timeout)
+      (By locator) -> waitAllUntilPresent(driver, locator, timeout)
     );
   }
 
@@ -519,7 +522,7 @@ public class Healing {
       elementLocator,
       uiLabel,
       timeoutGeminiResponse,
-      () -> waitUntilInvisible(driver, elementLocator, timeout)
+      (By locator) -> waitUntilInvisible(driver, locator, timeout)
     );
   }
 
@@ -561,8 +564,8 @@ public class Healing {
         elementLocator,
         uiLabel,
         timeoutGeminiResponse,
-        () -> {
-          isPresent(driver, elementLocator, timeout);
+        (By locator) -> {
+          isPresent(driver, locator, timeout);
           return true;
         }
       );
@@ -606,8 +609,8 @@ public class Healing {
         elementLocator,
         uiLabel,
         timeoutGeminiResponse,
-        () -> {
-          clickOn(driver, elementLocator, timeout);
+        (By locator) -> {
+          clickOn(driver, locator, timeout);
           return null;
         }
       );
@@ -653,8 +656,8 @@ public class Healing {
         elementLocator,
         uiLabel,
         timeoutGeminiResponse,
-        () -> {
-          WebElement element = waitAllUntilPresent(driver, elementLocator, timeout).get(index);
+        (By locator) -> {
+          WebElement element = waitAllUntilPresent(driver, locator, timeout).get(index);
           element.click();
           return null;
         }
@@ -695,8 +698,8 @@ public class Healing {
       elementLocator,
       uiLabel,
       timeoutGeminiResponse,
-      () -> {
-        WebElement element = waitAllUntilPresent(driver, elementLocator, timeout).get(index);
+      (By locator) -> {
+        WebElement element = waitAllUntilPresent(driver, locator, timeout).get(index);
         element.clear();
         element.sendKeys(inputText);
         return null;
@@ -737,8 +740,8 @@ public class Healing {
       elementLocator,
       uiLabel,
       timeoutGeminiResponse,
-      () -> {
-        typeOn(driver, elementLocator, inputText, timeout);
+      (By locator) -> {
+        typeOn(driver, locator, inputText, timeout);
         return null;
       }
     );
