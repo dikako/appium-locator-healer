@@ -221,7 +221,7 @@ public class Healing {
    * @param timeout    the maximum duration to wait before timing out
    * @return the WebElement that satisfies the specified condition
    */
-  private WebElement waitUntil(WebDriver driver, ExpectedCondition<WebElement> conditions, Duration timeout) {
+  private static WebElement waitUntil(WebDriver driver, ExpectedCondition<WebElement> conditions, Duration timeout) {
     WebDriverWait wait = new WebDriverWait(driver, timeout);
     return wait.until(conditions);
   }
@@ -234,7 +234,7 @@ public class Healing {
    * @param timeout        the maximum duration to wait before timing out
    * @return the WebElement that becomes clickable
    */
-  private WebElement waitUntilClickable(WebDriver driver, By elementLocator, Duration timeout) {
+  private static WebElement waitUntilClickable(WebDriver driver, By elementLocator, Duration timeout) {
     return waitUntil(driver, ExpectedConditions.elementToBeClickable(elementLocator), timeout);
   }
 
@@ -246,7 +246,7 @@ public class Healing {
    * @param timeout        the maximum duration to wait before timing out
    * @return the visible WebElement targeted by the given locator
    */
-  private WebElement waitUntilVisible(WebDriver driver, By elementLocator, Duration timeout) {
+  private static WebElement waitUntilVisible(WebDriver driver, By elementLocator, Duration timeout) {
     return waitUntil(driver, ExpectedConditions.visibilityOfElementLocated(elementLocator), timeout);
   }
 
@@ -258,7 +258,7 @@ public class Healing {
    * @param timeout        the maximum duration to wait before timing out
    * @return the WebElement that becomes present in the DOM as identified by the locator
    */
-  private WebElement waitUntilPresent(WebDriver driver, By elementLocator, Duration timeout) {
+  private static WebElement waitUntilPresent(WebDriver driver, By elementLocator, Duration timeout) {
     return waitUntil(driver, ExpectedConditions.presenceOfElementLocated(elementLocator), timeout);
   }
 
@@ -270,7 +270,7 @@ public class Healing {
    * @param timeout        the maximum duration to wait before timing out
    * @return a list of WebElements that match the specified locator and are present in the DOM
    */
-  public List<WebElement> waitAllUntilPresent(WebDriver driver, By elementLocator, Duration timeout) {
+  public static List<WebElement> waitAllUntilPresent(WebDriver driver, By elementLocator, Duration timeout) {
     WebDriverWait wait = new WebDriverWait(driver, timeout);
     return wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(elementLocator));
   }
@@ -283,7 +283,7 @@ public class Healing {
    * @param timeout        the maximum duration to wait before timing out
    * @return true if the element becomes invisible within the timeout period, false otherwise
    */
-  public Boolean waitUntilInvisible(WebDriver driver, By elementLocator, Duration timeout) {
+  public static Boolean waitUntilInvisible(WebDriver driver, By elementLocator, Duration timeout) {
     WebDriverWait wait = new WebDriverWait(driver, timeout);
     return wait.until(ExpectedConditions.invisibilityOfElementLocated(elementLocator));
   }
@@ -312,7 +312,7 @@ public class Healing {
    * @param elementLocator the locator used to identify the web element to be clicked
    * @param timeout        the maximum duration to wait for the element to become clickable
    */
-  private void clickOn(WebDriver driver, By elementLocator, Duration timeout) {
+  private static void clickOn(WebDriver driver, By elementLocator, Duration timeout) {
     waitUntilClickable(driver, elementLocator, timeout).click();
   }
 
@@ -324,7 +324,7 @@ public class Healing {
    * @param inputText      the text to be typed into the target web element
    * @param timeout        the maximum duration to wait for the element to become clickable
    */
-  private void typeOn(WebDriver driver, By elementLocator, String inputText, Duration timeout) {
+  private static void typeOn(WebDriver driver, By elementLocator, String inputText, Duration timeout) {
     waitUntilClickable(driver, elementLocator, timeout).sendKeys(inputText);
   }
 
@@ -581,7 +581,7 @@ public class Healing {
    * @param timeoutGeminiResponse the timeout duration for Gemini healing-related activities in seconds
    * @param timeoutFindElement    an optional duration parameter(s) specifying timeout for finding the element
    */
-  public void clickOn(
+  public static void clickOn(
     Platform platform,
     String geminiModel,
     WebDriver driver,
@@ -627,7 +627,7 @@ public class Healing {
    * @param timeoutGeminiResponse The timeout (in seconds or milliseconds) for receiving responses from the Gemini model.
    * @param timeoutFindElement    Optional timeout(s) used to wait for the web element to become present or interactable.
    */
-  public void clickOn(
+  public static void clickOn(
     Platform platform,
     String geminiModel,
     WebDriver driver,
@@ -675,7 +675,7 @@ public class Healing {
    * @param inputText             the text to be typed into the web element.
    * @param timeoutFindElement    an optional vararg of timeout duration(s) used to override the default timeout for finding the element.
    */
-  public void typeOn(
+  public static void typeOn(
     Platform platform,
     String geminiModel,
     WebDriver driver,
@@ -718,7 +718,7 @@ public class Healing {
    * @param inputText             the text input that will be typed into the identified web element
    * @param timeoutFindElement    optional timeout configurations for finding the web element; if not provided, a default timeout will be used
    */
-  public void typeOn(
+  public static void typeOn(
     Platform platform,
     String geminiModel,
     WebDriver driver,
