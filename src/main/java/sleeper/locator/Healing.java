@@ -306,16 +306,16 @@ public class Healing {
    * if the initial attempt fails. The healing mechanism tries to resolve issues related to
    * element locators dynamically.
    *
-   * @param platform the platform information to assist in the locator healing process
-   * @param geminiModel the Gemini model identifier used for generating healed locators
-   * @param driver the WebDriver instance used for interacting with the web application
-   * @param elementLocator the original locator for the web element
-   * @param uiLabel a readable identifier for the user interface element
+   * @param platform              the platform information to assist in the locator healing process
+   * @param geminiModel           the Gemini model identifier used for generating healed locators
+   * @param driver                the WebDriver instance used for interacting with the web application
+   * @param elementLocator        the original locator for the web element
+   * @param uiLabel               a readable identifier for the user interface element
    * @param timeoutGeminiResponse timeout duration for the Gemini response in seconds
-   * @param action the action to perform on the web element, expressed as a function
-   * @param <T> the type of the action's return value
+   * @param action                the action to perform on the web element, expressed as a function
+   * @param <T>                   the type of the action's return value
    * @return the result of the action performed on the web element, or throws an exception if
-   *         the action fails even after trying to heal the locator
+   * the action fails even after trying to heal the locator
    */
   public static <T> T performWithHealing(
     Platform platform,
@@ -370,13 +370,13 @@ public class Healing {
           // Retry after healing
           T result = action.apply(healedLocator);
           logger.info(String.format("Action succeeded after healing: %s", healedLocatorString));
+
+          cache.addHealedLocator(elementLocator, healedLocator);
+
           return result;
         } catch (Exception retryEx) {
           logger.warning(String.format("Action still failed after healing: %s, Error: %s",
             healedLocatorString, retryEx.getMessage()));
-
-          // The cached locator is also broken now, so remove it
-          cache.removeStaleLocator(elementLocator);
           throw retryEx;
         }
       }
