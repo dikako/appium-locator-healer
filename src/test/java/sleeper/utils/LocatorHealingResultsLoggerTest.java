@@ -30,9 +30,9 @@ public class LocatorHealingResultsLoggerTest {
 
     Map<String, Object> entry = Map.of(
       "timestamp", 123L,
-      "errorElementLocator", "By.id:login",
-      "resolvedElementLocator", "accessibilityId",
-      "detailAIResponse", "login_button"
+      "originalLocator", "By.id:login",
+      "resolvedType", "accessibilityId",
+      "resolvedLocator", "login_button"
     );
 
     logger.saveHealedElementLocator(entry);
