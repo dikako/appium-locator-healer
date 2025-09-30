@@ -12,10 +12,15 @@ import sleeper.prompt.AndroidPrompts;
 import sleeper.prompt.IOSPrompts;
 import sleeper.prompt.WebPrompts;
 import sleeper.utils.GeminiUtils;
+import sleeper.utils.LocatorHealingResultsLogger;
 import sleeper.utils.LocatorUtils;
+import sleeper.utils.Utils;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -372,6 +377,18 @@ public class Healing {
           logger.info(String.format("Action succeeded after healing: %s", healedLocatorString));
 
           cache.addHealedLocator(elementLocator, healedLocator);
+
+          Path projectRoot = Paths.get(System.getProperty("user.dir"));
+          Path target = projectRoot.resolve("logs").resolve("resolved-locator.json");
+          LocatorHealingResultsLogger logger = new LocatorHealingResultsLogger(target);
+
+          Map<String, Object> logResolvedLocator = Map.of(
+            "executedAt", Utils.getTimestamp(),
+            "resolvedElementLocator", healedLocatorString,
+            "errorElementLocator", elementLocator.toString()
+          );
+
+          logger.saveHealedElementLocator(logResolvedLocator);
 
           return result;
         } catch (Exception retryEx) {
