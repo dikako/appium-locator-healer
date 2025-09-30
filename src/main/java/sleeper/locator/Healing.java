@@ -8,19 +8,15 @@ import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import org.slf4j.LoggerFactory;
 import sleeper.prompt.AndroidPrompts;
 import sleeper.prompt.IOSPrompts;
 import sleeper.prompt.WebPrompts;
 import sleeper.utils.GeminiUtils;
-import sleeper.utils.LocatorHealingResultsLogger;
 import sleeper.utils.LocatorUtils;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
@@ -31,21 +27,21 @@ import java.util.logging.Logger;
  * error details and context.
  */
 public class Healing {
+  /**
+   * A static final Logger instance used for logging messages and debugging
+   * information in the application. It is associated with the Healing class
+   * for tracking and recording runtime events, error messages, or informational
+   * data specific to the execution of the class's functionality.
+   */
   private static final Logger logger = Logger.getLogger(Healing.class.getName());
-  private static final LocatorHealingResultsLogger resultsLogger = new LocatorHealingResultsLogger();
+
 
   /**
-   * A thread-safe cache that stores resolved locators for UI elements. The key is a string
-   * representing the unique identifier of the element or the context, and the value is a
-   * {@link By} object representing the corresponding locator.
-   * <p>
-   * This cache is utilized to improve performance by avoiding repeated computation or retrieval
-   * of locators, particularly in scenarios where dynamic locator healing is performed. It is
-   * maintained across different healing operations to facilitate reuse of previously resolved
-   * locators.
+   * A final instance of LocatorCache reused throughout the application to manage and store
+   * locational data in memory for improved performance and quick access.
+   * This cache is implemented as a singleton to ensure only one instance exists globally.
    */
-  private static final Map<String, By> locatorCache = new ConcurrentHashMap<>();
-  private static final org.slf4j.Logger log = LoggerFactory.getLogger(Healing.class);
+  private static final LocatorCache cache = LocatorCache.getInstance();
 
   /**
    * Represents the supported platforms for element healing operations.
@@ -96,21 +92,10 @@ public class Healing {
     String uiLabel,
     int timeout) {
 
-    String cacheKey = String.join("|",
-      platform.toString(),
-      geminiModel,
-      errorElementLocator,
-      errorDetails,
-      uiLabel
-    );
-
-    if (locatorCache.containsKey(cacheKey)) {
-      logger.info(String.format(
-        "[%s Element Healing] Cache HIT. Returning previously resolved locator for: %s",
-        platform, errorElementLocator
-      ));
-      return locatorCache.get(cacheKey);
-    }
+    logger.info(String.format(
+      "[%s Element Healing] Cache HIT. Returning previously resolved locator for: %s",
+      platform, errorElementLocator
+    ));
 
     logger.info(String.format("[%s Element Healing] Starting iOS element healing with model: %s", platform, geminiModel));
 
@@ -147,18 +132,6 @@ public class Healing {
       Prompt Response           -> %s
       Resolved Element Locator  -> %s
       """.formatted(errorElementLocator, responseText, resolvedLocator.toString()));
-
-    resultsLogger.saveHealedElementLocator(
-      Map.of(
-        "executedAt", Instant.now().toString(),
-        "errorElementLocator", errorElementLocator,
-        "resolvedElementLocator", resolvedLocator.toString(),
-        "detailAIResponse", responseTextToJsonElement.toString()
-      )
-    );
-
-    locatorCache.put(cacheKey, resolvedLocator);
-    logger.info(String.format("[%s Element Healing] New locator has been cached.", platform));
 
     return resolvedLocator;
   }
@@ -329,20 +302,20 @@ public class Healing {
   }
 
   /**
-   * Attempts to perform the provided action and, in case of a failure, applies a healing mechanism
-   * to resolve the issue and retries the action. Healing is performed using AI-driven predictions
-   * based on the platform, context, and error details.
+   * Attempts to perform the specified action on a web element and retries using a healed locator
+   * if the initial attempt fails. The healing mechanism tries to resolve issues related to
+   * element locators dynamically.
    *
-   * @param platform              the platform (ANDROID, IOS, or WEB) used for locating or healing the element
-   * @param geminiModel           the identifier of the Gemini AI model to use for healing
-   * @param driver                the WebDriver instance providing access to the current page context
-   * @param elementLocator        the initial locator targeting the element to perform the action on
-   * @param uiLabel               an optional descriptive label for the target UI element
-   * @param timeoutGeminiResponse the timeout duration (in milliseconds) for the AI model's healing response
-   * @param action                the action to be executed on the element, wrapped in a {@code Supplier} that returns a result
-   * @param <T>                   the type of the result that the action produces
-   * @return the result of the performed action, either from the initial attempt or after healing
-   * @throws RuntimeException if the action fails both initially and after attempting healing
+   * @param platform the platform information to assist in the locator healing process
+   * @param geminiModel the Gemini model identifier used for generating healed locators
+   * @param driver the WebDriver instance used for interacting with the web application
+   * @param elementLocator the original locator for the web element
+   * @param uiLabel a readable identifier for the user interface element
+   * @param timeoutGeminiResponse timeout duration for the Gemini response in seconds
+   * @param action the action to perform on the web element, expressed as a function
+   * @param <T> the type of the action's return value
+   * @return the result of the action performed on the web element, or throws an exception if
+   *         the action fails even after trying to heal the locator
    */
   public static <T> T performWithHealing(
     Platform platform,
@@ -360,28 +333,52 @@ public class Healing {
       String errorMessage = e.getMessage();
       logger.warning(String.format("Action failed on element: %s, Error: %s", elementLocator, errorMessage));
 
-      // Heal locator
-      By healedLocator = healLocator(
-        platform,
-        geminiModel,
-        driver,
-        elementLocator.toString(),
-        errorMessage,
-        uiLabel,
-        timeoutGeminiResponse
-      );
+      Optional<By> cachedLocator = cache.getHealedLocator(elementLocator);
+      if (cachedLocator.isPresent()) {
+        By cachedHealedLocatorValue = cachedLocator.get();
 
-      String healedLocatorString = healedLocator.toString();
+        try {
+          logger.info(String.format("Healed locator cached: %s", cachedHealedLocatorValue));
 
-      try {
-        // Retry after healing
-        T result = action.apply(healedLocator);
-        logger.info(String.format("Action succeeded after healing: %s", healedLocatorString));
-        return result;
-      } catch (Exception retryEx) {
-        logger.warning(String.format("Action still failed after healing: %s, Error: %s",
-          healedLocatorString, retryEx.getMessage()));
-        throw retryEx;
+          // Retry after healing
+          T result = action.apply(cachedHealedLocatorValue);
+          logger.info(String.format("Action succeeded after use Healed locator cached: %s", cachedHealedLocatorValue));
+          return result;
+        } catch (Exception retryEx) {
+          logger.warning(String.format("Action still failed after use Healed locator cached: %s, Error: %s",
+            cachedHealedLocatorValue, retryEx.getMessage()));
+
+          // The cached locator is also broken now, so remove it
+          cache.removeStaleLocator(elementLocator);
+          throw retryEx;
+        }
+      } else {
+        // Heal locator
+        By healedLocator = healLocator(
+          platform,
+          geminiModel,
+          driver,
+          elementLocator.toString(),
+          errorMessage,
+          uiLabel,
+          timeoutGeminiResponse
+        );
+
+        String healedLocatorString = healedLocator.toString();
+
+        try {
+          // Retry after healing
+          T result = action.apply(healedLocator);
+          logger.info(String.format("Action succeeded after healing: %s", healedLocatorString));
+          return result;
+        } catch (Exception retryEx) {
+          logger.warning(String.format("Action still failed after healing: %s, Error: %s",
+            healedLocatorString, retryEx.getMessage()));
+
+          // The cached locator is also broken now, so remove it
+          cache.removeStaleLocator(elementLocator);
+          throw retryEx;
+        }
       }
     }
   }
