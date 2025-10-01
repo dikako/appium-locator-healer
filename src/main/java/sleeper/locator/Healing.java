@@ -146,8 +146,7 @@ public class Healing {
         "[%s Element Healing] Failed to resolve element locator: %s",
         platform, errorElementLocator
       ));
-      logger.warning(String.format("[%s Element Healing] Response: %s", platform, responseText));
-      throw new RuntimeException(e);
+      throw new RuntimeException(">[iOS Element Healing] Failed to resolve element locator: " + errorElementLocator + "\n" + responseText);
     }
   }
 
