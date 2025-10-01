@@ -125,20 +125,30 @@ public class Healing {
       .trim();
 
     JsonElement responseTextToJsonElement = JsonParser.parseString(responseText);
-    JsonObject responseJson = responseTextToJsonElement.getAsJsonObject();
-    String locatorType = responseJson.get("newValidElementType").getAsString();
-    String locator = responseJson.get("newValidElement").getAsString();
-    // Resolved element locator
-    By resolvedLocator = LocatorUtils.getByFromString(locatorType, locator);
 
-    logger.info("""
-      [iOS Element Healing]
-      Element Before healing    -> %s
-      Prompt Response           -> %s
-      Resolved Element Locator  -> %s
-      """.formatted(errorElementLocator, responseText, resolvedLocator.toString()));
+    try {
+      JsonObject responseJson = responseTextToJsonElement.getAsJsonObject();
+      String locatorType = responseJson.get("newValidElementType").getAsString();
+      String locator = responseJson.get("newValidElement").getAsString();
+      // Resolved element locator
+      By resolvedLocator = LocatorUtils.getByFromString(locatorType, locator);
 
-    return resolvedLocator;
+      logger.info("""
+        [iOS Element Healing]
+        Element Before healing    -> %s
+        Prompt Response           -> %s
+        Resolved Element Locator  -> %s
+        """.formatted(errorElementLocator, responseText, resolvedLocator.toString()));
+
+      return resolvedLocator;
+    } catch (Exception e) {
+      logger.warning(String.format(
+        "[%s Element Healing] Failed to resolve element locator: %s",
+        platform, errorElementLocator
+      ));
+      logger.warning(String.format("[%s Element Healing] Response: %s", platform, responseText));
+      throw new RuntimeException(e);
+    }
   }
 
   /**
