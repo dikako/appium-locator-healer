@@ -52,7 +52,7 @@ public class LocatorUtils {
 
       // iOS
       case "-ios class chain", "class chain", "chain" -> AppiumBy.iOSClassChain(locatorValue);
-      case "-ios predicate string", "predicate string", "predicate" -> AppiumBy.iOSClassChain(locatorValue);
+      case "-ios predicate string", "predicate string", "predicate" -> AppiumBy.iOSNsPredicateString(locatorValue);
 
       // Android
       case "-android uiautomator", "uiautomator" -> new AppiumBy.ByAndroidUIAutomator(locatorValue);
