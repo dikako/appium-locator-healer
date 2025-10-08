@@ -131,4 +131,15 @@ public class SelfHealingData {
   public static void setIsSelfHealingExecuted(boolean isSelfHealingExecuted) {
     SelfHealingData.isSelfHealingExecuted = isSelfHealingExecuted;
   }
+
+  /**
+   * Resets the self-healing execution state within the SelfHealingData context.
+   * This method sets the self-healing status to "not executed" by updating
+   * the value associated with the self-healing execution flag.
+   * It is typically called to reset the self-healing process
+   * before starting a new operation.
+   */
+  public static void flush() {
+    SelfHealingData.setIsSelfHealingExecuted(false);
+  }
 }
