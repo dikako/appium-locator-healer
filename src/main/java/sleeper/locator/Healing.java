@@ -351,6 +351,9 @@ public class Healing {
     } catch (Exception e) {
       String errorMessage = e.getMessage();
 
+      // Set Self-Healing Data (Mark as Self-Healing Executed status (true/false))
+      SelfHealingData.setIsSelfHealingExecuted(true);
+
       // Set Self-Healing Data (Original Error)
       SelfHealingData.setOriginalError(errorMessage);
 

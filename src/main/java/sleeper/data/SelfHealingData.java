@@ -12,6 +12,7 @@ public class SelfHealingData {
   private static String originalError = "";
   private static String healedLocator = "";
   private static String healedError = "";
+  private static boolean isSelfHealingExecuted = false;
 
   /**
    * Retrieves the value of the original locator.
@@ -107,5 +108,27 @@ public class SelfHealingData {
    */
   public static void setHealedError(String healedError) {
     SelfHealingData.healedError = healedError;
+  }
+
+  /**
+   * Checks whether self-healing has been executed.
+   *
+   * @return true if self-healing has been executed, false otherwise
+   */
+  public static boolean isIsSelfHealingExecuted() {
+    return isSelfHealingExecuted;
+  }
+
+  /**
+   * Sets the self-healing execution state within the SelfHealingData context.
+   * This method is used to indicate whether the self-healing process
+   * for locators has been executed.
+   *
+   * @param isSelfHealingExecuted a boolean value representing the execution state
+   *                              of the self-healing process. Pass true if the
+   *                              self-healing has been executed; otherwise, pass false.
+   */
+  public static void setIsSelfHealingExecuted(boolean isSelfHealingExecuted) {
+    SelfHealingData.isSelfHealingExecuted = isSelfHealingExecuted;
   }
 }
