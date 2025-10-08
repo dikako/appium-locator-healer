@@ -8,6 +8,7 @@ import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import sleeper.data.SelfHealingData;
 import sleeper.prompt.AndroidPrompts;
 import sleeper.prompt.IOSPrompts;
 import sleeper.prompt.WebPrompts;
@@ -340,11 +341,19 @@ public class Healing {
     int timeoutGeminiResponse,
     Function<By, T> action
   ) {
+
+    // Set Self-Healing Data (Original Locator)
+    SelfHealingData.setOriginalLocator(elementLocator.toString());
+
     try {
       // First attempt
       return action.apply(elementLocator);
     } catch (Exception e) {
       String errorMessage = e.getMessage();
+
+      // Set Self-Healing Data (Original Error)
+      SelfHealingData.setOriginalError(errorMessage);
+
       logger.warning(String.format("Action failed on element: %s, Error: %s", elementLocator, errorMessage));
 
       Optional<By> cachedLocator = cache.getHealedLocator(elementLocator);
@@ -367,20 +376,25 @@ public class Healing {
           throw retryEx;
         }
       } else {
-        // Heal locator
-        By healedLocator = healLocator(
-          platform,
-          geminiModel,
-          driver,
-          elementLocator.toString(),
-          errorMessage,
-          uiLabel,
-          timeoutGeminiResponse
-        );
-
-        String healedLocatorString = healedLocator.toString();
+        String healedLocatorString = "";
 
         try {
+          // Heal locator
+          By healedLocator = healLocator(
+            platform,
+            geminiModel,
+            driver,
+            elementLocator.toString(),
+            errorMessage,
+            uiLabel,
+            timeoutGeminiResponse
+          );
+
+          healedLocatorString = healedLocator.toString();
+
+          // Set Self-Healing Data (Healed Locator)
+          SelfHealingData.setHealedLocator(healedLocatorString);
+
           // Retry after healing
           T result = action.apply(healedLocator);
           logger.info(String.format("Action succeeded after healing: %s", healedLocatorString));
@@ -401,8 +415,13 @@ public class Healing {
 
           return result;
         } catch (Exception retryEx) {
+          errorMessage = retryEx.getMessage();
+
+          // Set Self-Healing Data (Healed Locator)
+          SelfHealingData.setHealedError(errorMessage);
+
           logger.warning(String.format("Action still failed after healing: %s, Error: %s",
-            healedLocatorString, retryEx.getMessage()));
+            healedLocatorString, errorMessage));
           throw retryEx;
         }
       }
