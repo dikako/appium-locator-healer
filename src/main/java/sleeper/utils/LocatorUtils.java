@@ -59,7 +59,7 @@ public class LocatorUtils {
       case "-android viewtag", "viewtag" -> new AppiumBy.ByAndroidViewTag(locatorValue);
 
       // General
-      case "id" -> By.id(locatorValue);
+      case "id", "resource-id" -> By.id(locatorValue);
       case "name" -> By.name(locatorValue);
       case "css selector", "css" -> By.cssSelector(locatorValue);
       case "xpath" -> By.xpath(locatorValue);

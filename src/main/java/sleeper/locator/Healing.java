@@ -8,6 +8,7 @@ import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.slf4j.LoggerFactory;
 import sleeper.data.SelfHealingData;
 import sleeper.prompt.AndroidPrompts;
 import sleeper.prompt.IOSPrompts;
@@ -48,6 +49,7 @@ public class Healing {
    * This cache is implemented as a singleton to ensure only one instance exists globally.
    */
   private static final LocatorCache cache = LocatorCache.getInstance();
+  private static final org.slf4j.Logger log = LoggerFactory.getLogger(Healing.class);
 
   /**
    * Represents the supported platforms for element healing operations.
@@ -103,7 +105,7 @@ public class Healing {
       platform, errorElementLocator
     ));
 
-    logger.info(String.format("[%s Element Healing] Starting iOS element healing with model: %s", platform, geminiModel));
+    logger.info(String.format("[%s Element Healing] Starting element healing with model: %s", platform, geminiModel));
 
     GenerateContentResponse response = GeminiUtils.getResponse(
       geminiModel,
@@ -112,6 +114,8 @@ public class Healing {
     );
 
     String responseText = response.text();
+
+    logger.info("Response text: " + responseText);
 
     try {
       assert responseText != null;
@@ -147,7 +151,14 @@ public class Healing {
         "[%s Element Healing] Failed to resolve element locator: %s",
         platform, errorElementLocator
       ));
-      throw new RuntimeException(">[iOS Element Healing] Failed to resolve element locator: " + errorElementLocator + "\n" + responseText);
+      throw new RuntimeException(
+        String.format(
+          ">[%s Element Healing] Failed to resolve element locator: %s\n%s",
+          platform,
+          errorElementLocator,
+          responseText
+        )
+      );
     }
   }
 
